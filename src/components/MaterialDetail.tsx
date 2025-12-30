@@ -164,9 +164,8 @@ export function MaterialDetail({
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* PDF Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+          {/* <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="flex items-center gap-2">
                 <FileText className="w-6 h-6 text-green-600" />
@@ -225,7 +224,7 @@ export function MaterialDetail({
                 )}
               </div>
             )}
-          </div>
+          </div> */}
 
           {/* Quiz Section */}
           <div className="bg-white rounded-lg shadow-md p-6">

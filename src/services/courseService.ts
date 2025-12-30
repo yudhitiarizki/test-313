@@ -18,6 +18,7 @@ interface CourseDetail {
   id: string;
   title: string;
   questions: Question[];
+  questionCount: number;
   createdAt: number;
 }
 

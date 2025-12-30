@@ -7,8 +7,8 @@ interface LoginProps {
 }
 
 const USERS = {
-  admin: "admin123",
-  "user-verif": "verif123",
+  admin: "mandiri313admin",
+  "user-verif": "verif313",
   "user-biasa": "user123",
 };
 
@@ -75,24 +75,6 @@ export function Login({ onLogin }: LoginProps) {
             Login
           </button>
         </form>
-
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-600 mb-2">Demo Credentials:</p>
-          <ul className="text-sm text-gray-700 space-y-1">
-            <li>
-              • Admin:{" "}
-              <code className="bg-white px-2 py-1 rounded">admin123</code>
-            </li>
-            <li>
-              • User Verif:{" "}
-              <code className="bg-white px-2 py-1 rounded">verif123</code>
-            </li>
-            <li>
-              • User Biasa:{" "}
-              <code className="bg-white px-2 py-1 rounded">user123</code>
-            </li>
-          </ul>
-        </div>
       </div>
     </div>
   );
