@@ -75,6 +75,20 @@ export function Login({ onLogin }: LoginProps) {
             Login
           </button>
         </form>
+
+        <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+          <p className="text-sm text-gray-600 mb-2">Link donasi 🤣:</p>
+          <ul className="text-sm text-gray-700 space-y-1">
+            <li>
+              • Sociabuz:{" "}
+              <code className="bg-white px-2 py-1 rounded">
+                <a target="_blank" href="https://sociabuzz.com/admin313">
+                  https://sociabuzz.com/admin313
+                </a>
+              </code>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );
