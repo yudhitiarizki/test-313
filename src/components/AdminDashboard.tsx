@@ -4,7 +4,7 @@ import { Material } from "../types";
 
 interface AdminDashboardProps {
   materials: Material[];
-  onAddMaterial: (title: string) => Promise<boolean>;
+  onAddMaterial: (title: string) => void;
   onSelectMaterial: (material: Material) => void;
   onDeleteMaterial: (id: string) => void;
   onLogout: () => void;

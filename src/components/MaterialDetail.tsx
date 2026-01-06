@@ -6,6 +6,7 @@ import {
   FileText,
   PenTool,
   Upload,
+  Edit2,
 } from "lucide-react";
 import { Material, Question, UserRole } from "../types";
 
@@ -14,6 +15,10 @@ interface MaterialDetailProps {
   userRole: UserRole;
   onBack: () => void;
   onAddQuestion: (question: Omit<Question, "id">) => void;
+  onUpdateQuestion: (
+    questionId: string,
+    question: Omit<Question, "id">
+  ) => void;
   onDeleteQuestion: (questionId: string) => void;
   onStartQuiz: () => void;
   onUploadPDF: (file: File) => void;
@@ -25,22 +30,57 @@ export function MaterialDetail({
   userRole,
   onBack,
   onAddQuestion,
+  onUpdateQuestion,
   onDeleteQuestion,
   onStartQuiz,
   onUploadPDF,
   onDeletePDF,
 }: MaterialDetailProps) {
   const [showAddQuestion, setShowAddQuestion] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [questionType, setQuestionType] = useState<"pilihan-ganda" | "essay">(
     "pilihan-ganda"
   );
   const [questionText, setQuestionText] = useState("");
-  const [options, setOptions] = useState(["", ""]);
-  const [correctAnswers, setCorrectAnswers] = useState<string[]>([]);
+  const [options, setOptions] = useState(["", ""]); // Start with 2 options
+  const [correctAnswers, setCorrectAnswers] = useState<string[]>([]); // Changed to array of IDs
   const [explanation, setExplanation] = useState("");
 
   const isAdmin = userRole === "admin";
   const canAccessQuiz = userRole === "admin" || userRole === "user-verif";
+
+  const handleEditQuestion = (question: Question) => {
+    setEditingQuestion(question);
+    setQuestionType(question.type);
+    setQuestionText(question.question);
+    setExplanation(question.explanation || "");
+
+    if (question.type === "pilihan-ganda" && question.options) {
+      // Load options
+      setOptions(question.options.map((opt) => opt.text));
+
+      // Load correct answers - convert real IDs to temp IDs
+      const tempCorrectAnswers = question.correctAnswers.map((correctId) => {
+        const index = question.options!.findIndex(
+          (opt) => opt.id === correctId
+        );
+        return `temp_${index}`;
+      });
+      setCorrectAnswers(tempCorrectAnswers);
+    } else {
+      setCorrectAnswers(question.correctAnswers);
+    }
+  };
+
+  const resetForm = () => {
+    setEditingQuestion(null);
+    setQuestionText("");
+    setOptions(["", ""]);
+    setCorrectAnswers([]);
+    setExplanation("");
+    setQuestionType("pilihan-ganda");
+    setShowAddQuestion(false);
+  };
 
   const handleAddOption = () => {
     setOptions([...options, ""]);
@@ -106,9 +146,11 @@ export function MaterialDetail({
         explanation: explanation || undefined,
       };
 
-      console.log("New Question:", newQuestion);
-
-      onAddQuestion(newQuestion);
+      if (editingQuestion) {
+        onUpdateQuestion(editingQuestion.id, newQuestion);
+      } else {
+        onAddQuestion(newQuestion);
+      }
     } else {
       // Essay
       const newQuestion: Omit<Question, "id"> = {
@@ -117,16 +159,15 @@ export function MaterialDetail({
         correctAnswers: [correctAnswers[0] || ""],
         explanation: explanation || undefined,
       };
-      console.log("New Question essay:", newQuestion);
-      onAddQuestion(newQuestion);
+
+      if (editingQuestion) {
+        onUpdateQuestion(editingQuestion.id, newQuestion);
+      } else {
+        onAddQuestion(newQuestion);
+      }
     }
 
-    // Reset form
-    setQuestionText("");
-    setOptions(["", ""]); // Reset to 2 options
-    setCorrectAnswers([]);
-    setExplanation("");
-    setShowAddQuestion(false);
+    resetForm();
   };
 
   const handleToggleCorrectAnswer = (index: number) => {
@@ -165,67 +206,6 @@ export function MaterialDetail({
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
-          {/* <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="flex items-center gap-2">
-                <FileText className="w-6 h-6 text-green-600" />
-                Materi PDF
-              </h2>
-            </div>
-
-            {material.pdfUrl ? (
-              <div className="space-y-4">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <p className="text-green-800 mb-2">
-                    📄 {material.pdfName || "Materi.pdf"}
-                  </p>
-                  <div className="flex gap-2">
-                    <a
-                      href={material.pdfUrl}
-                      download
-                      className="text-sm bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      Download PDF
-                    </a>
-                    {isAdmin && (
-                      <button
-                        onClick={onDeletePDF}
-                        className="text-sm bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                      >
-                        Hapus
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                {isAdmin ? (
-                  <>
-                    <Upload className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-600 mb-4">Belum ada materi PDF</p>
-                    <label className="inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
-                      Upload PDF
-                      <input
-                        type="file"
-                        accept=".pdf"
-                        onChange={handleFileChange}
-                        className="hidden"
-                      />
-                    </label>
-                  </>
-                ) : (
-                  <>
-                    <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-600">
-                      Belum ada materi PDF tersedia
-                    </p>
-                  </>
-                )}
-              </div>
-            )}
-          </div> */}
-
           {/* Quiz Section */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between mb-4">
@@ -304,16 +284,26 @@ export function MaterialDetail({
                           </p>
                           <p className="text-sm">{question.question}</p>
                         </div>
-                        <button
-                          onClick={() => {
-                            if (confirm("Yakin ingin menghapus soal ini?")) {
-                              onDeleteQuestion(question.id);
-                            }
-                          }}
-                          className="text-red-600 hover:bg-red-50 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => handleEditQuestion(question)}
+                            className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Edit soal"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm("Yakin ingin menghapus soal ini?")) {
+                                onDeleteQuestion(question.id);
+                              }
+                            }}
+                            className="text-red-600 hover:bg-red-50 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Hapus soal"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -323,11 +313,13 @@ export function MaterialDetail({
           </div>
         </div>
 
-        {/* Add Question Form Modal */}
-        {showAddQuestion && (
+        {/* Add/Edit Question Form Modal */}
+        {(showAddQuestion || editingQuestion) && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <h2 className="mb-4">Tambah Soal Baru</h2>
+              <h2 className="mb-4">
+                {editingQuestion ? "Edit Soal" : "Tambah Soal Baru"}
+              </h2>
               <form onSubmit={handleSubmitQuestion} className="space-y-4">
                 {/* Question Type */}
                 <div>
@@ -492,13 +484,7 @@ export function MaterialDetail({
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowAddQuestion(false);
-                      setQuestionText("");
-                      setOptions(["", ""]); // Reset to 2 options
-                      setCorrectAnswers([]);
-                      setExplanation("");
-                    }}
+                    onClick={resetForm}
                     className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition-colors"
                   >
                     Batal

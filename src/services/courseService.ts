@@ -125,6 +125,24 @@ export const courseService = {
       throw error;
     }
   },
+
+  // Update question
+  updateQuestion: async (
+    courseId: string,
+    questionId: string,
+    question: Omit<Question, "id">
+  ): Promise<Question> => {
+    try {
+      const response = await api.put<ApiResponse<Question>>(
+        `/courses/${courseId}/questions/${questionId}`,
+        question
+      );
+      return response.data.data;
+    } catch (error) {
+      console.error("Error updating question:", error);
+      throw error;
+    }
+  },
 };
 
 export default courseService;

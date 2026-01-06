@@ -126,6 +126,45 @@ export default function App() {
     }
   };
 
+  const handleUpdateQuestion = async (
+    questionId: string,
+    question: Omit<Question, "id">
+  ) => {
+    if (!selectedMaterial) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Hit API untuk update question
+      const updatedQuestion = await courseService.updateQuestion(
+        selectedMaterial.id,
+        questionId,
+        question
+      );
+
+      // Update local state setelah API berhasil
+      const updatedMaterial: Material = {
+        ...selectedMaterial,
+        questions: selectedMaterial.questions.map((q) =>
+          q.id === questionId ? updatedQuestion : q
+        ),
+      };
+
+      setMaterials(
+        materials.map((m) =>
+          m.id === selectedMaterial.id ? updatedMaterial : m
+        )
+      );
+      setSelectedMaterial(updatedMaterial);
+    } catch (err) {
+      setError("Gagal mengupdate question");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeleteQuestion = async (questionId: string) => {
     if (!selectedMaterial) return;
 
@@ -234,6 +273,7 @@ export default function App() {
         userRole={currentUser}
         onBack={handleBackFromMaterial}
         onAddQuestion={handleAddQuestion}
+        onUpdateQuestion={handleUpdateQuestion}
         onDeleteQuestion={handleDeleteQuestion}
         onStartQuiz={handleStartQuiz}
         onUploadPDF={handleUploadPDF}
