@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -19,14 +19,47 @@ interface QuizProps {
 
 type ViewMode = "intro" | "quiz" | "review" | "finished";
 
+// Utility function to shuffle array using Fisher-Yates algorithm
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export function Quiz({ questions, materialTitle, onBack }: QuizProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswer[]>([]);
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
   const [showAnswer, setShowAnswer] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("intro");
+  const [shuffledQuestions, setShuffledQuestions] = useState<Question[]>([]);
 
-  const currentQuestion = questions[currentIndex];
+  // Shuffle questions and options when component mounts
+  useEffect(() => {
+    // Shuffle questions
+    const questionsToShuffle = shuffleArray(questions);
+
+    // Shuffle options for each multiple choice question
+    const shuffledQs = questionsToShuffle.map((question) => {
+      if (question.type === "pilihan-ganda" && question.options) {
+        return {
+          ...question,
+          options: shuffleArray(question.options),
+        };
+      }
+      return question;
+    });
+
+    setShuffledQuestions(shuffledQs);
+  }, [questions]);
+
+  // Use shuffled questions if available, otherwise use original
+  const activeQuestions =
+    shuffledQuestions.length > 0 ? shuffledQuestions : questions;
+  const currentQuestion = activeQuestions[currentIndex];
   const isMultipleCorrectAnswers =
     currentQuestion.type === "pilihan-ganda" &&
     currentQuestion.correctAnswers.length > 1;
@@ -84,9 +117,9 @@ export function Quiz({ questions, materialTitle, onBack }: QuizProps) {
   };
 
   const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
+    if (currentIndex < activeQuestions.length - 1) {
       setCurrentIndex(currentIndex + 1);
-      const nextQuestion = questions[currentIndex + 1];
+      const nextQuestion = activeQuestions[currentIndex + 1];
       const nextAnswer = answers.find((a) => a.questionId === nextQuestion.id);
 
       if (nextAnswer) {
@@ -106,7 +139,7 @@ export function Quiz({ questions, materialTitle, onBack }: QuizProps) {
   const handleBack = () => {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
-      const prevQuestion = questions[currentIndex - 1];
+      const prevQuestion = activeQuestions[currentIndex - 1];
       const prevAnswer = answers.find((a) => a.questionId === prevQuestion.id);
 
       if (prevAnswer) {
@@ -118,13 +151,13 @@ export function Quiz({ questions, materialTitle, onBack }: QuizProps) {
 
   const calculateScore = () => {
     const multipleChoiceAnswers = answers.filter((answer) => {
-      const question = questions.find((q) => q.id === answer.questionId);
+      const question = activeQuestions.find((q) => q.id === answer.questionId);
       return question?.type === "pilihan-ganda";
     });
     const correctAnswers = multipleChoiceAnswers.filter(
       (a) => a.isCorrect
     ).length;
-    const totalMultipleChoice = questions.filter(
+    const totalMultipleChoice = activeQuestions.filter(
       (q) => q.type === "pilihan-ganda"
     ).length;
 
@@ -135,10 +168,10 @@ export function Quiz({ questions, materialTitle, onBack }: QuizProps) {
 
   // Intro Page
   if (viewMode === "intro") {
-    const multipleChoiceCount = questions.filter(
+    const multipleChoiceCount = activeQuestions.filter(
       (q) => q.type === "pilihan-ganda"
     ).length;
-    const essayCount = questions.filter((q) => q.type === "essay").length;
+    const essayCount = activeQuestions.filter((q) => q.type === "essay").length;
 
     return (
       <div className="min-h-screen bg-gray-50">
@@ -176,7 +209,9 @@ export function Quiz({ questions, materialTitle, onBack }: QuizProps) {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                 <div className="bg-blue-50 rounded-lg p-4">
                   <p className="text-blue-600 mb-1">Total Soal</p>
-                  <p className="text-3xl text-blue-700">{questions.length}</p>
+                  <p className="text-3xl text-blue-700">
+                    {activeQuestions.length}
+                  </p>
                 </div>
                 {multipleChoiceCount > 0 && (
                   <div className="bg-green-50 rounded-lg p-4">
@@ -251,7 +286,7 @@ export function Quiz({ questions, materialTitle, onBack }: QuizProps) {
 
         <main className="max-w-4xl mx-auto px-4 py-8">
           <div className="space-y-6">
-            {questions.map((question, qIndex) => {
+            {activeQuestions.map((question, qIndex) => {
               const answer = answers.find((a) => a.questionId === question.id);
               const isAnswered = !!answer;
 
@@ -385,7 +420,7 @@ export function Quiz({ questions, materialTitle, onBack }: QuizProps) {
                 >
                   Kembali ke Quiz
                 </button>
-                {answers.length === questions.length && (
+                {answers.length === activeQuestions.length && (
                   <button
                     onClick={() => setViewMode("finished")}
                     className="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors"
@@ -411,10 +446,10 @@ export function Quiz({ questions, materialTitle, onBack }: QuizProps) {
   // Finished Page
   if (viewMode === "finished") {
     const score = calculateScore();
-    const multipleChoiceCount = questions.filter(
+    const multipleChoiceCount = activeQuestions.filter(
       (q) => q.type === "pilihan-ganda"
     ).length;
-    const essayCount = questions.filter((q) => q.type === "essay").length;
+    const essayCount = activeQuestions.filter((q) => q.type === "essay").length;
 
     return (
       <div className="min-h-screen bg-gray-50">
@@ -461,7 +496,7 @@ export function Quiz({ questions, materialTitle, onBack }: QuizProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-gray-600 mb-1">Total Soal</p>
-                <p className="text-2xl">{questions.length}</p>
+                <p className="text-2xl">{activeQuestions.length}</p>
               </div>
               {multipleChoiceCount > 0 && (
                 <div className="bg-green-50 rounded-lg p-4">
@@ -469,7 +504,9 @@ export function Quiz({ questions, materialTitle, onBack }: QuizProps) {
                   <p className="text-2xl text-green-700">
                     {
                       answers.filter((a) => {
-                        const q = questions.find((q) => q.id === a.questionId);
+                        const q = activeQuestions.find(
+                          (q) => q.id === a.questionId
+                        );
                         return q?.type === "pilihan-ganda" && a.isCorrect;
                       }).length
                     }{" "}
@@ -540,7 +577,7 @@ export function Quiz({ questions, materialTitle, onBack }: QuizProps) {
           <div className="mb-6">
             <div className="flex justify-between text-sm text-gray-600 mb-2">
               <span>
-                Soal {currentIndex + 1} / {questions.length}
+                Soal {currentIndex + 1} / {activeQuestions.length}
               </span>
               <span>{answers.length} Terjawab</span>
             </div>
@@ -548,7 +585,7 @@ export function Quiz({ questions, materialTitle, onBack }: QuizProps) {
               <div
                 className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
                 style={{
-                  width: `${(answers.length / questions.length) * 100}%`,
+                  width: `${(answers.length / activeQuestions.length) * 100}%`,
                 }}
               />
             </div>
@@ -760,7 +797,7 @@ export function Quiz({ questions, materialTitle, onBack }: QuizProps) {
                   onClick={handleNext}
                   className="flex-1 bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
                 >
-                  {currentIndex < questions.length - 1 ? (
+                  {currentIndex < activeQuestions.length - 1 ? (
                     <>
                       Soal Berikutnya
                       <ArrowRight className="w-5 h-5" />
